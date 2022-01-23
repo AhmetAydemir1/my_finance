@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:my_finance/modal/bill_modal.dart';
+import 'package:my_finance/modal/api.dart';
+import 'package:my_finance/modal/crypto_modal.dart';
 import 'package:my_finance/modal/card_modal.dart';
 import 'package:my_finance/modal/my_widgets.dart';
 import '../main.dart';
@@ -20,7 +24,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool pageLoaded = false;
   double spendPercentage = 80;
   List<CreditCard> myCards = [];
-  List<BillModal> myBills = [];
+  List<CryptoModal> trendCryptos = [];
 
   @override
   void initState() {
@@ -59,53 +63,45 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ]).creditCards ??
         [];
-    myBills = BillModalList.fromJson([
-          {
-            "name": "Spotify",
-            "id": "123123",
-            "imageUrl":
-                "https://www.freepnglogos.com/uploads/spotify-logo-png/file-spotify-logo-png-4.png",
-            "picked": false,
-            "timestamp": DateTime.now().millisecondsSinceEpoch,
-            "price": 12.90,
-          },
-          {
-            "name": "Netflix",
-            "id": "1231235",
-            "imageUrl":
-                "https://www.edigitalagency.com.au/wp-content/uploads/Netflix-N-Symbol-logo-red-transparent-RGB-png.png",
-            "picked": false,
-            "timestamp": DateTime.now().millisecondsSinceEpoch,
-            "price": 7.00,
-          },
-          {
-            "name": "Spotify",
-            "id": "123123",
-            "imageUrl":
-                "https://www.freepnglogos.com/uploads/spotify-logo-png/file-spotify-logo-png-4.png",
-            "picked": false,
-            "timestamp": DateTime.now().millisecondsSinceEpoch,
-            "price": 12.90,
-          },
-          {
-            "name": "Netflix",
-            "id": "1231235",
-            "imageUrl":
-                "https://www.edigitalagency.com.au/wp-content/uploads/Netflix-N-Symbol-logo-red-transparent-RGB-png.png",
-            "picked": false,
-            "timestamp": DateTime.now().millisecondsSinceEpoch,
-            "price": 7.00,
-          },
-        ]).billModals ??
-        [];
-    myBills.first.picked = true;
-    await Future.delayed(const Duration(seconds: 1)).then((value) {
-      if (mounted) {
-        setState(() {
-          pageLoaded = true;
-        });
-      }
+
+    await getData();
+    trendCryptos.first.picked = true;
+    Timer.periodic(const Duration(seconds: 10), (timer) async {
+      await getData();
     });
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {});
+    });
+
+    if (mounted) {
+      setState(() {
+        pageLoaded = true;
+      });
+    }
+  }
+
+  getData() async {
+    var response = await jsonDecode(await Api().get(
+        "https://sandbox-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
+        {
+          "X-CMC_PRO_API_KEY": "b54bcf4d-1bca-4e8e-9a24-22ff2c3d462c",
+        }));
+    if (response["status"]["error_code"] == 0) {
+      int lastPicked = 0;
+      if (trendCryptos.isNotEmpty) {
+        lastPicked = trendCryptos.indexWhere((element) => element.picked!);
+      }
+      setState(() {
+        trendCryptos =
+            CryptoModalList.fromJson(response["data"]).cryptoModals ?? [];
+        for (CryptoModal crypto in trendCryptos) {
+          crypto.picked = false;
+        }
+        trendCryptos[lastPicked].picked = true;
+      });
+    } else {
+      print(response["status"]["error_message"]);
+    }
   }
 
   @override
@@ -254,50 +250,59 @@ class _MyHomePageState extends State<MyHomePage> {
                     }
                   },
                 )),
-            SizedBox(
-              height: MyBlock(context).vertical(19),
-            ),
-            Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: EdgeInsets.only(left: MyBlock(context).vertical(36)),
-                  child: Text(
-                    "Upcoming bills",
-                    style: GoogleFonts.orbitron(
-                        fontSize: MyBlock(context).vertical(30),
-                        color: Colors.white),
-                  ),
-                )),
-            SizedBox(
-              height: MyBlock(context).vertical(50),
-            ),
-            SizedBox(
-                height: MyBlock(context).vertical(4),
-                child: ListView.builder(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: MyBlock(context).horizontal(17)),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: myBills.length,
-                  itemBuilder: (context, index) {
-                    return Row(
-                      children: [
-                        MyWidgets(context).billWidget(myBills[index], () {
-                          for (BillModal bill in myBills) {
-                            bill.picked = false;
-                          }
-                          setState(() {
-                            myBills[index].picked = true;
-                          });
-                        }),
-                        myBills.length - 1 != index
-                            ? SizedBox(
-                                width: MyBlock(context).horizontal(35),
-                              )
-                            : const SizedBox.shrink(),
-                      ],
-                    );
-                  },
-                )),
+            trendCryptos.isNotEmpty
+                ? Column(
+                    children: [
+                      SizedBox(
+                        height: MyBlock(context).vertical(19),
+                      ),
+                      Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                                left: MyBlock(context).vertical(36)),
+                            child: Text(
+                              "Trending cryptos",
+                              style: GoogleFonts.orbitron(
+                                  fontSize: MyBlock(context).vertical(30),
+                                  color: Colors.white),
+                            ),
+                          )),
+                      SizedBox(
+                        height: MyBlock(context).vertical(50),
+                      ),
+                      SizedBox(
+                          height: MyBlock(context).vertical(4),
+                          child: ListView.builder(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: MyBlock(context).horizontal(17)),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: trendCryptos.length,
+                            itemBuilder: (context, index) {
+                              return Row(
+                                children: [
+                                  MyWidgets(context)
+                                      .cryptoWidget(trendCryptos[index], () {
+                                    for (CryptoModal bill in trendCryptos) {
+                                      bill.picked = false;
+                                    }
+                                    setState(() {
+                                      trendCryptos[index].picked = true;
+                                    });
+                                  }),
+                                  trendCryptos.length - 1 != index
+                                      ? SizedBox(
+                                          width:
+                                              MyBlock(context).horizontal(35),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ],
+                              );
+                            },
+                          )),
+                    ],
+                  )
+                : const SizedBox.shrink(),
             SafeArea(
               child: SizedBox(
                 height: MyBlock(context).vertical(5),

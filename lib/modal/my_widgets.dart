@@ -4,9 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_finance/modal/card_modal.dart';
 import 'package:flutter_advanced_switch/flutter_advanced_switch.dart';
 import '../main.dart';
-import 'bill_modal.dart';
+import 'crypto_modal.dart';
 import 'my_block.dart';
-import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class MyWidgets {
@@ -113,7 +112,7 @@ class MyWidgets {
     );
   }
 
-  Widget billWidget(BillModal bill, void Function() onTap) {
+  Widget cryptoWidget(CryptoModal crypto, void Function() onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(MyBlock(context).horizontal(20)),
@@ -127,7 +126,7 @@ class MyWidgets {
               top: MyBlock(context).vertical(29),
               bottom: MyBlock(context).vertical(40)),
           decoration: BoxDecoration(
-            color: bill.picked!
+            color: crypto.picked!
                 ? const Color(0xffF5FEFE)
                 : const Color(0xff2A2A2A),
             borderRadius:
@@ -141,9 +140,9 @@ class MyWidgets {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    bill.name!,
+                    crypto.name!,
                     style: GoogleFonts.orbitron(
-                        color: bill.picked! ? Colors.black : Colors.white,
+                        color: crypto.picked! ? Colors.black : Colors.white,
                         fontSize: MyBlock(context).horizontal(30),
                         fontWeight: FontWeight.w500),
                   ),
@@ -157,7 +156,7 @@ class MyWidgets {
                         radius: MyBlock(context).vertical(50),
                         backgroundColor: Colors.black,
                         backgroundImage:
-                            CachedNetworkImageProvider(bill.imageUrl!),
+                            CachedNetworkImageProvider(crypto.imageUrl!),
                       ))
                 ],
               ),
@@ -170,17 +169,18 @@ class MyWidgets {
                         child: RichText(
                       text: TextSpan(
                           style: GoogleFonts.orbitron(
-                              color: bill.picked! ? Colors.black : Colors.white,
+                              color:
+                                  crypto.picked! ? Colors.black : Colors.white,
                               fontWeight: FontWeight.w500),
                           children: [
                             TextSpan(
                               text: "\$" +
-                                  bill.price!.truncate().toString() +
+                                  crypto.price!.truncate().toString() +
                                   ".",
                               style: const TextStyle(fontSize: 10000),
                             ),
                             TextSpan(
-                              text: bill.price!
+                              text: crypto.price!
                                   .toStringAsFixed(2)
                                   .split(".")
                                   .last,
@@ -193,8 +193,7 @@ class MyWidgets {
                     height: MyBlock(context).vertical(200),
                   ),
                   Text(
-                    DateFormat("dd MMM yyyy").format(
-                        DateTime.fromMillisecondsSinceEpoch(bill.timestamp!)),
+                    timeAgo(crypto.now),
                     style: GoogleFonts.orbitron(
                         color: const Color(0xff777878),
                         fontSize: MyBlock(context).horizontal(36)),
@@ -206,6 +205,12 @@ class MyWidgets {
         ),
       ),
     );
+  }
+
+  String timeAgo(DateTime date) {
+    var difference = DateTime.now().difference(date);
+
+    return difference.inSeconds.toString()+" saniye önce";
   }
 
   Widget menuButton() {
