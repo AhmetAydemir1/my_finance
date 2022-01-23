@@ -88,8 +88,14 @@ class _MyHomePageState extends State<MyHomePage> {
         }));
     if (response["status"]["error_code"] == 0) {
       int lastPicked = 0;
+      // API test sürümü olduğu için önceki listede var olan id yeni listede bulunmayabiliyor.
+      // Bu nedenle son seçileni id ile almak yerine index ile aldım.
+      // Aşağıda yorum satırına alınan kısımlar normalde olması gereken satırlardır.
+
+      //String? lastPickedID;
       if (trendCryptos.isNotEmpty) {
         lastPicked = trendCryptos.indexWhere((element) => element.picked!);
+        //lastPickedID = trendCryptos.firstWhere((element) => element.picked!).id;
       }
       setState(() {
         trendCryptos =
@@ -97,8 +103,10 @@ class _MyHomePageState extends State<MyHomePage> {
         for (CryptoModal crypto in trendCryptos) {
           crypto.picked = false;
         }
+        //trendCryptos.firstWhere((element) => element.id==lastPickedID).picked=true;
         trendCryptos[lastPicked].picked = true;
       });
+
     } else {
       print(response["status"]["error_message"]);
     }
